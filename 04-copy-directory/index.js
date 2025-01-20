@@ -20,10 +20,7 @@ function makeDir(path) {
             fs.rm(getPath(path, element.name), { recursive: true }).then(() =>
               copyFolder(getFolder(folder), getFolder(folderCopy)),
             );
-          } else {
-            console.log('del', element.name);
-            fs.unlink(getPath(path, element.name)).then(() => {});
-          }
+          } else fs.unlink(getPath(path, element.name)).then(() => {});
         });
       });
     }
@@ -46,11 +43,11 @@ function copyFolder(folder, folderCopy) {
             path.join(folderCopy, element.name),
           )
             .then(() => {})
-            .catch((error) => console.log(error, 'err2'));
+            .catch((error) => console.log(error));
         }
       });
     })
-    .catch((err) => {
-      console.log(err, 'err3');
+    .catch((error) => {
+      console.log(error);
     });
 }
