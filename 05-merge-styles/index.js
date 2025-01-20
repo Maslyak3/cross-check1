@@ -9,13 +9,11 @@ const targetFolder = path.join(
   '05-merge-styles',
   'project-dist',
 );
-
 const writer = fs.createWriteStream(path.join(targetFolder, 'bundle.css'));
 
 copyStyles(styleFolder);
 
 function copyStyles(folder) {
-  console.log(folder);
   fspromises
     .readdir(folder, { withFileTypes: true })
     .then((filenames) => {
@@ -32,6 +30,8 @@ function copyStyles(folder) {
               readStream.close();
             });
           }
+        } else {
+          copyStyles(path.join(element.path, element.name));
         }
       });
     })

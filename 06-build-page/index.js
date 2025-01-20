@@ -1,6 +1,5 @@
 const fs = require('fs');
 const fspromises = require('fs/promises');
-const { error } = require('node:console');
 const path = require('node:path');
 
 const styleFolder = path.join(__dirname, '..', '06-build-page', 'styles');
@@ -10,12 +9,14 @@ const targetFolder = path.join(
   '06-build-page',
   'project-dist',
 );
+
 const templateHTML = path.join(
   __dirname,
   '..',
   '06-build-page',
   'template.html',
 );
+
 const componentsHTML = path.join(
   __dirname,
   '..',
@@ -40,12 +41,14 @@ fs.mkdir(targetFolder, { recursive: true }, (err) => {
     return console.error(err);
   }
   console.log('Directory created successfully!');
-  asembleTemplate();
-  makeCopy(assetsFolder, assetsTarget);
+  assembleTemplate();
+  copyAssets(assetsFolder, assetsTarget);
   copyStyles(styleFolder);
 });
 
-function asembleTemplate() {
+//assemble template
+
+function assembleTemplate() {
   const regTemplate = /{{.+?}}/g;
   const readStream = fs.createReadStream(templateHTML);
   readStream.on('data', (chunk) => {
@@ -56,7 +59,7 @@ function asembleTemplate() {
 
   readStream.on('error', (error) => console.log(error.message));
   readStream.on('end', () => {
-    //console.log(`${element.name} coping styles finished`);
+    console.log('HTML assemble finished');
     readStream.close();
   });
 }
@@ -89,21 +92,20 @@ function addComponents(template, components) {
     });
 }
 
+//assets copy
+
+function copyAssets(assetsFolder, assetsTarget) {
+  makeCopy(assetsFolder, assetsTarget);
+  console.log('Coping the fiiles finished');
+}
+
 function makeCopy(pathFolder, pathCopy) {
-  console.log('makecopy');
   fspromises.mkdir(pathCopy, { recursive: true }).then((dir) => {
-    console.log('0', dir);
-    //   if (!dir) {
-    console.log('1');
     fspromises.readdir(pathCopy, { withFileTypes: true }).then((filenames) => {
-      console.log('2');
       if (!filenames.length) {
-        console.log('3');
         copyFolder(assetsFolder, assetsTarget);
       } else {
-        console.log('4');
         filenames.forEach((element) => {
-          //console.log(element.name);
           if (element.isDirectory())
             fspromises
               .rm(getPath(element.path, element.name), { recursive: true })
@@ -111,9 +113,10 @@ function makeCopy(pathFolder, pathCopy) {
         });
       }
     });
-    //}
   });
 }
+
+//gather style
 
 function copyFolder(folder, folderCopy) {
   fspromises
@@ -146,7 +149,6 @@ function copyFolder(folder, folderCopy) {
 }
 
 function copyStyles(folder) {
-  console.log(folder);
   fspromises
     .readdir(folder, { withFileTypes: true })
     .then((filenames) => {
@@ -160,15 +162,15 @@ function copyStyles(folder) {
               writerStyle.write(chunk.toString()),
             );
             readStream.on('error', (error) => console.log(error.message));
-            readStream.on('end', () => {
-              //console.log(`${element.name} coping styles finished`);
-              readStream.close();
-            });
+            readStream.on('end', () => readStream.close());
           }
+        } else {
+          copyStyles(path.join(element.path, element.name));
         }
       });
     })
     .catch((error) => {
       console.log(error);
     });
+  console.log('Styles coping styles finished');
 }
