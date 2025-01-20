@@ -21,9 +21,16 @@ console.log(
 );
 
 interface.on('line', (str) => {
-  if (str.toLowerCase().includes('exit')) {
+  /* Check if line include exit.
+
+    if (str.toLowerCase().includes('exit')) {
     const index = str.toLowerCase().indexOf('exit');
     writer.write(str.slice(0, index));
+    recordFinish(interface);
+    return;
+  } */
+  // if line === exit
+  if (str.toLowerCase() === 'exit') {
     recordFinish(interface);
     return;
   }
