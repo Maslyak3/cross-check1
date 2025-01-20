@@ -106,10 +106,23 @@ function makeCopy(pathFolder, pathCopy) {
         copyFolder(assetsFolder, assetsTarget);
       } else {
         filenames.forEach((element) => {
-          if (element.isDirectory())
+          if (element.isDirectory()) {
             fspromises
               .rm(getPath(element.path, element.name), { recursive: true })
               .then(() => copyFolder(assetsFolder, assetsTarget));
+          } else {
+            if (element.path === assetsTarget) {
+              fspromises.unlink(
+                getPath(element.path, element.name),
+                {
+                  recursive: true,
+                },
+                (error) => {
+                  console.log('no such', element.name);
+                },
+              );
+            }
+          }
         });
       }
     });
