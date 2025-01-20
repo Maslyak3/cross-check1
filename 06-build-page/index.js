@@ -1,15 +1,14 @@
 const fs = require('fs');
 const fspromises = require('fs/promises');
+const { error } = require('node:console');
 const path = require('node:path');
-const { fileURLToPath } = require('node:url');
 
 const styleFolder = path.join(__dirname, '..', '06-build-page', 'styles');
 const targetFolder = path.join(
   __dirname,
   '..',
   '06-build-page',
-  //'project-dist',
-  't',
+  'project-dist',
 );
 const templateHTML = path.join(
   __dirname,
@@ -35,19 +34,30 @@ const assetsTarget = path.join(
 
 const getPath = (pathFile, name) => path.join(pathFile, name);
 
-const regTemplate = /{{.+?}}/g;
+fs.mkdir(targetFolder, { recursive: true }, (err) => {
+  if (err) {
+    return console.error(err);
+  }
+  console.log('Directory created successfully!');
+  asembleTemplate();
+  makeCopy(assetsFolder, assetsTarget);
+});
 
-const readStream = fs.createReadStream(templateHTML);
-readStream.on('data', (chunk) => {
-  const temp = chunk.toString();
-  const components = chunk.toString().match(regTemplate);
-  addComponents(chunk, components);
-});
-readStream.on('error', (error) => console.log(error.message));
-readStream.on('end', () => {
-  //console.log(`${element.name} coping styles finished`);
-  readStream.close();
-});
+function asembleTemplate() {
+  const regTemplate = /{{.+?}}/g;
+  const readStream = fs.createReadStream(templateHTML);
+  readStream.on('data', (chunk) => {
+    //const temp = chunk.toString();
+    const components = chunk.toString().match(regTemplate);
+    addComponents(chunk, components);
+  });
+
+  readStream.on('error', (error) => console.log(error.message));
+  readStream.on('end', () => {
+    //console.log(`${element.name} coping styles finished`);
+    readStream.close();
+  });
+}
 
 function addComponents(template, components) {
   let result = template.toString();
@@ -77,54 +87,50 @@ function addComponents(template, components) {
     });
 }
 
-console.log(`styleFolder ${styleFolder}
-targetFolder ${targetFolder}
-templateHTML ${templateHTML}
-assetsFolder ${assetsFolder}
-assetsTarget ${assetsTarget}
-`);
+function makeCopy(pathFolder, pathCopy) {
+  fspromises.mkdir(pathCopy, { recursive: true }).then((dir) => {
+    if (!dir) {
+      fspromises
+        .readdir(pathCopy, { withFileTypes: true })
+        .then((filenames) => {
+          if (!filenames.length) {
+            copyFolder(assetsFolder, assetsTarget);
+          } else {
+            filenames.forEach((element) => {
+              //console.log(element.name);
+              if (element.isDirectory())
+                fspromises
+                  .rm(getPath(element.path, element.name), { recursive: true })
+                  .then(() => copyFolder(assetsFolder, assetsTarget));
+            });
+          }
+        });
+    }
+  });
+}
 
-/*
-const str = '1, 2, 3, 4';
-const regex = /\d+/g;
-const matches = str.match(regex);
-console.log(matches); // ['1', '2', '3', '4']
-*/
-
-/*const fs = require('fs');
-const fspromises = require('fs/promises');
-const path = require('node:path');
-
-const styleFolder = path.join(__dirname, '..', '05-merge-styles', 'styles');
-const targetFolder = path.join(
-  __dirname,
-  '..',
-  '05-merge-styles',
-  'project-dist',
-);
-
-const writer = fs.createWriteStream(path.join(targetFolder, 'bundle.css'));
-
-copyStyles(styleFolder);
-
-function copyStyles(folder) {
-  console.log(folder);
+function copyFolder(folder, folderCopy) {
   fspromises
     .readdir(folder, { withFileTypes: true })
     .then((filenames) => {
       filenames.forEach((element) => {
-        if (element.isFile()) {
-          if (path.extname(element.name) === '.css') {
-            const readStream = fs.createReadStream(
-              path.join(element.path, element.name),
-            );
-            readStream.on('data', (chunk) => writer.write(chunk.toString()));
-            readStream.on('error', (error) => console.log(error.message));
-            readStream.on('end', () => {
-              console.log(`${element.name} coping styles finished`);
-              readStream.close();
-            });
-          }
+        if (element.isDirectory()) {
+          makeCopy(
+            getPath(folder, element.name),
+            getPath(folderCopy, element.name),
+          );
+          copyFolder(
+            getPath(folder, element.name),
+            getPath(folderCopy, element.name),
+          );
+        } else {
+          fspromises
+            .copyFile(
+              path.join(folder, element.name),
+              path.join(folderCopy, element.name),
+            )
+            .then(() => {})
+            .catch((error) => console.log(error));
         }
       });
     })
@@ -132,4 +138,3 @@ function copyStyles(folder) {
       console.log(error);
     });
 }
-*/
