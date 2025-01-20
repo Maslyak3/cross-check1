@@ -33,6 +33,7 @@ const assetsTarget = path.join(
 );
 
 const getPath = (pathFile, name) => path.join(pathFile, name);
+const writerStyle = fs.createWriteStream(path.join(targetFolder, 'style.css'));
 
 fs.mkdir(targetFolder, { recursive: true }, (err) => {
   if (err) {
@@ -41,6 +42,7 @@ fs.mkdir(targetFolder, { recursive: true }, (err) => {
   console.log('Directory created successfully!');
   asembleTemplate();
   makeCopy(assetsFolder, assetsTarget);
+  copyStyles(styleFolder);
 });
 
 function asembleTemplate() {
@@ -88,24 +90,28 @@ function addComponents(template, components) {
 }
 
 function makeCopy(pathFolder, pathCopy) {
+  console.log('makecopy');
   fspromises.mkdir(pathCopy, { recursive: true }).then((dir) => {
-    if (!dir) {
-      fspromises
-        .readdir(pathCopy, { withFileTypes: true })
-        .then((filenames) => {
-          if (!filenames.length) {
-            copyFolder(assetsFolder, assetsTarget);
-          } else {
-            filenames.forEach((element) => {
-              //console.log(element.name);
-              if (element.isDirectory())
-                fspromises
-                  .rm(getPath(element.path, element.name), { recursive: true })
-                  .then(() => copyFolder(assetsFolder, assetsTarget));
-            });
-          }
+    console.log('0', dir);
+    //   if (!dir) {
+    console.log('1');
+    fspromises.readdir(pathCopy, { withFileTypes: true }).then((filenames) => {
+      console.log('2');
+      if (!filenames.length) {
+        console.log('3');
+        copyFolder(assetsFolder, assetsTarget);
+      } else {
+        console.log('4');
+        filenames.forEach((element) => {
+          //console.log(element.name);
+          if (element.isDirectory())
+            fspromises
+              .rm(getPath(element.path, element.name), { recursive: true })
+              .then(() => copyFolder(assetsFolder, assetsTarget));
         });
-    }
+      }
+    });
+    //}
   });
 }
 
@@ -131,6 +137,34 @@ function copyFolder(folder, folderCopy) {
             )
             .then(() => {})
             .catch((error) => console.log(error));
+        }
+      });
+    })
+    .catch((error) => {
+      console.log(error);
+    });
+}
+
+function copyStyles(folder) {
+  console.log(folder);
+  fspromises
+    .readdir(folder, { withFileTypes: true })
+    .then((filenames) => {
+      filenames.forEach((element) => {
+        if (element.isFile()) {
+          if (path.extname(element.name) === '.css') {
+            const readStream = fs.createReadStream(
+              path.join(element.path, element.name),
+            );
+            readStream.on('data', (chunk) =>
+              writerStyle.write(chunk.toString()),
+            );
+            readStream.on('error', (error) => console.log(error.message));
+            readStream.on('end', () => {
+              //console.log(`${element.name} coping styles finished`);
+              readStream.close();
+            });
+          }
         }
       });
     })
