@@ -27,18 +27,18 @@ function makeCopy(pathFolder, pathCopy) {
           if (element.isDirectory())
             fs.rm(getPath(element.path, element.name), {
               recursive: true,
-            }).then(() => copyFolder(getFolder(folder), getFolder(folderCopy)));
+            })
+              .then(() => copyFolder(getFolder(folder), getFolder(folderCopy)))
+              .catch((error) => {});
           else {
             if (element.path === getFolder(folderCopy)) {
-              fs.unlink(
-                getPath(element.path, element.name),
-                {
-                  recursive: true,
-                },
-                (error) => {
-                  console.log('no such', element.name);
-                },
-              );
+              fs.unlink(getPath(element.path, element.name), {
+                recursive: true,
+              })
+                .then(() =>
+                  copyFolder(getFolder(folder), getFolder(folderCopy)),
+                )
+                .catch(() => {});
             }
           }
         });
@@ -46,7 +46,6 @@ function makeCopy(pathFolder, pathCopy) {
     });
   });
 }
-
 function copyFolder(folder, folderCopy) {
   fs.readdir(folder, { withFileTypes: true })
     .then((filenames) => {
