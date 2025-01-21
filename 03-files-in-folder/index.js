@@ -12,7 +12,10 @@ function getSize(size) {
 }
 
 const formatStr = (name, extension, size, last = false) =>
-  `File: ${name}\nExtension: ${extension}\nSize: ${size}\n*******\n`;
+  `File: ${name.slice(
+    0,
+    -(extension.length + 1),
+  )}\nExtension: ${extension}\nSize: ${size}\n*******\n`;
 
 function fileInfo(file, extension) {
   fs.stat(getPathFile(file))
